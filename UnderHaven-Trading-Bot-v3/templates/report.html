@@ -1,0 +1,62 @@
+{% extends 'base.html' %}{% block body %}
+<div class="top"><img src="/static/logo.png"><div><div class="brand">UNDERHAVEN TRADING BOT</div><div class="muted small">Report: what the bot did while you were away</div></div><div class="top-actions"><a class="btn gray smallbtn" href="/" style="text-decoration:none">Dashboard</a><a class="btn gray smallbtn" href="/logout" style="text-decoration:none">Logout</a></div></div>
+{% set t=d.total %}
+<section class="card" style="margin-top:14px">
+  <div class="section-head"><h2 class="section-title">Time window</h2><span class="small muted">From <span class="utc" data-t="{{since}}">{{since}}</span> to now</span></div>
+  <div class="row">
+    {% if has_prev %}<a class="btn smallbtn {{'' if key=='login' else 'gray'}}" href="/report?range=login" style="text-decoration:none">Since my last login</a>{% endif %}
+    {% for r in ranges %}<a class="btn smallbtn {{'' if key==r else 'gray'}}" href="/report?range={{r}}" style="text-decoration:none">Last {{r}}</a>{% endfor %}
+    <a class="btn gray smallbtn" href="/export/scans.csv?range={{key}}" style="text-decoration:none">Export CSV</a>
+  </div>
+  {% if note %}<div class="note" style="margin-top:10px">{{note}}</div>{% endif %}
+</section>
+
+<section class="card" style="margin-top:14px">
+  {% if not t.minutes %}
+    <div class="muted">No scan history recorded in this window yet. History starts building as soon as the bot is running.</div>
+  {% else %}
+    <div class="note" style="margin-bottom:12px"><b>Verdict:</b>
+      {% if t.qualified_scans %}A gap that survived fees and your safety margin appeared in <b>{{t.qualified_scans}}</b> scan(s). Best NET edge seen: <b>{{'%.2f%%'|format(t.best_net*100)}}</b>.
+      {% else %}No scan found a gap that survived fees and your safety margin. Best NET edge seen: <b>{{'%.2f%%'|format((t.best_net or 0)*100)}}</b>.{% endif %}
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="muted small">Scans run</div><div class="value">{{'{:,}'.format(t.scans)}}</div></div>
+      <div class="stat"><div class="muted small">Uptime coverage</div><div class="value {{'ok' if coverage and coverage>=95 else 'warn'}}">{{'%.1f%%'|format(coverage or 0)}}</div></div>
+      <div class="stat"><div class="muted small">Best gross edge</div><div class="value">{{'%.2f%%'|format((t.best_gross or 0)*100)}}</div></div>
+      <div class="stat"><div class="muted small">Cheapest pair cost</div><div class="value">{{'%.4f'|format(t.min_pair) if t.min_pair else '—'}}</div></div>
+    </div>
+    <div class="stats" style="margin-top:10px">
+      <div class="stat"><div class="muted small">Scans with a qualifying gap</div><div class="value">{{t.qualified_scans}}</div></div>
+      <div class="stat"><div class="muted small">Paper trades</div><div class="value">{{d.paper.n}}</div></div>
+      <div class="stat"><div class="muted small">Simulated P&amp;L</div><div class="value {{'ok' if d.paper.pnl>0 else ''}}">${{'%.4f'|format(d.paper.pnl)}}</div></div>
+      <div class="stat"><div class="muted small">Scanner restarts / errors</div><div class="value">{{d.sessions}} / {{t.errors}}</div></div>
+    </div>
+    {% if d.live.n %}<div class="note" style="margin-top:10px"><b>LIVE trades in this window:</b> {{d.live.n}} logged, {{d.live.filled}} with both legs confirmed. Logged LIVE P&amp;L is an estimate, not a measured result: check the actual wallet balance.</div>{% endif %}
+  {% endif %}
+</section>
+
+{% if t.minutes %}
+<section class="card" style="margin-top:14px"><div class="section-head"><h2 class="section-title">Hour by hour</h2><span class="small muted">Times shown in your local time</span></div>
+  <div class="table-wrap"><table style="min-width:640px"><tr><th>Hour</th><th>Minutes active</th><th>Scans</th><th>Best gross</th><th>Best NET</th><th>Qualifying scans</th><th>Paper trades</th><th>Sim. P&amp;L</th><th>Errors</th></tr>
+  {% for h in d.hours %}<tr><td><span class="utc" data-t="{{h.hour}}">{{h.hour}}</span></td><td>{{h.minutes}}</td><td>{{'{:,}'.format(h.scans)}}</td><td>{{'%.2f%%'|format((h.best_gross or 0)*100)}}</td><td class="{{'ok' if (h.best_net or 0)>0 else 'bad'}}">{{'%.2f%%'|format((h.best_net or 0)*100)}}</td><td>{{h.qualified_scans}}</td><td>{{h.paper_trades}}</td><td>${{'%.4f'|format(h.paper_pnl)}}</td><td>{{h.errors}}</td></tr>{% endfor %}
+  </table></div></section>
+
+<div class="two" style="margin-top:14px">
+<section class="card"><div class="section-head"><h2 class="section-title">Best moments</h2><span class="small muted">Highest NET edge by minute</span></div>
+  <div class="table-wrap" style="max-height:320px"><table style="min-width:420px"><tr><th>When</th><th>Gross</th><th>NET</th><th>Pair</th></tr>
+  {% for b in d.best %}<tr><td><span class="utc" data-t="{{b.minute}}">{{b.minute}}</span></td><td>{{'%.2f%%'|format((b.best_gross or 0)*100)}}</td><td class="{{'ok' if (b.best_net or 0)>0 else 'bad'}}">{{'%.2f%%'|format((b.best_net or 0)*100)}}</td><td>{{'%.4f'|format(b.min_pair) if b.min_pair else '—'}}</td></tr>{% endfor %}
+  </table></div></section>
+<section class="card"><div class="section-head"><h2 class="section-title">Recent errors</h2><span class="small muted">Latest 10 minutes with an error</span></div>
+  <div class="table-wrap" style="max-height:320px"><table style="min-width:420px"><tr><th>When</th><th>Count</th><th>Message</th></tr>
+  {% for e in d.errors %}<tr><td><span class="utc" data-t="{{e.minute}}">{{e.minute}}</span></td><td>{{e.errors}}</td><td style="white-space:normal">{{e.last_error}}</td></tr>{% else %}<tr><td colspan="3">No errors recorded.</td></tr>{% endfor %}
+  </table></div></section>
+</div>
+
+<section class="card" style="margin-top:14px"><div class="section-head"><h2 class="section-title">Trades in this window</h2><span class="small muted">Latest 25</span></div>
+  <div class="table-wrap" style="max-height:320px"><table style="min-width:640px"><tr><th>Time</th><th>Mode</th><th>Market</th><th>Status</th><th>Spend</th><th>NET</th><th>P&amp;L</th></tr>
+  {% for x in d.trades %}<tr><td><span class="utc" data-t="{{x.ts}}">{{x.ts}}</span></td><td>{{x.mode}}</td><td>{{x.market}}</td><td>{{x.status}}</td><td>${{'%.4f'|format(x.spend or 0)}}</td><td>{{'%.3f%%'|format((x.net_edge or 0)*100)}}</td><td>${{'%.4f'|format(x.pnl or 0)}}</td></tr>{% else %}<tr><td colspan="7">No trades in this window.</td></tr>{% endfor %}
+  </table></div>
+  <div class="footer-note">Paper trades are simulated: they assume both legs fill at the measured prices. Each minute is summarised from roughly 30 scans (best gross/NET = the single best market seen in that minute). History is kept for 30 days.</div></section>
+{% endif %}
+<script>document.querySelectorAll('.utc').forEach(function(e){var d=new Date(e.dataset.t);if(!isNaN(d))e.textContent=d.toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});});</script>
+{% endblock %}
