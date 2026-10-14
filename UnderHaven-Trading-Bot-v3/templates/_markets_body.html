@@ -1,0 +1,18 @@
+<section class="card"><div class="section-head"><h2 class="section-title">BTC Up or Down windows</h2><span class="small muted">Polymarket and Kalshi · discovered from live exchange data</span></div>
+<div class="table-wrap"><table style="min-width:880px"><tr><th>Venue</th><th>Length</th><th>Window (UTC)</th><th class="num">Left</th><th class="num">UP bid / ask</th><th class="num">DOWN bid / ask</th><th class="num">Spread</th><th class="num">Depth</th><th class="num">Book age</th><th>Entry window</th></tr>
+{% for r in v.rows %}{% set m=r.m %}<tr class="{{'qual' if r.live and r.entry_ok}}"><td>{{m.venue|title}}</td><td>{{(m.duration/60)|int}}m</td><td>{{m.start_ts|utc}} → {{m.end_ts|hms}}</td>
+<td class="num">{{r.remaining|mmss if r.live else '—'}}</td>
+{% if r.obs %}<td class="num">{{r.up_bid|num(3) if r.up_bid is not none else '–'}} / {{r.up_ask|num(3) if r.up_ask is not none else '–'}}</td><td class="num">{{r.dn_bid|num(3) if r.dn_bid is not none else '–'}} / {{r.dn_ask|num(3) if r.dn_ask is not none else '–'}}</td><td class="num">{{r.spread|num(3) if r.spread is not none else '–'}}</td><td class="num">{{r.depth|num(0)}}</td><td class="num {{'bad' if r.age>svc.settings().max_quote_age}}">{{r.age|num(1)}}s</td>
+{% else %}<td colspan="5" class="muted">{{'no order book' if r.live else 'not live yet'}}</td>{% endif %}
+<td>{% if r.live %}{% if r.entry_ok %}<span class="tag v">OPEN FOR ENTRY</span>{% else %}<span class="small warn">{{r.entry_why}}</span>{% endif %}{% else %}<span class="small muted">upcoming</span>{% endif %}</td></tr>
+{% else %}<tr><td colspan="10" class="muted">No BTC Up/Down windows have been discovered yet. {% if svc.errors.polymarket or svc.errors.kalshi %}Data sources reporting errors: {{svc.errors.polymarket}} {{svc.errors.kalshi}}{% endif %}</td></tr>{% endfor %}</table></div>
+{% for dd in ['polymarket-5m','polymarket-15m','kalshi-5m','kalshi-15m'] if not v.available[dd] %}<div class="small warn" style="margin-top:6px">No {{dd.split('-')[0]|title}} {{dd.split('-')[1]}} BTC Up/Down market is currently listed.</div>{% endfor %}
+</section>
+<section class="card" style="margin-top:14px"><div class="section-head"><h2 class="section-title">Cross-platform pair verification</h2><span class="small muted">A pair is tradable only if every settlement rule is proven identical</span></div>
+{% for pr in v.pairs %}<div class="note" style="margin-bottom:8px"><div class="row"><b>{{(pr.poly.duration/60)|int}}-minute window {{pr.poly.start_ts|utc}}</b>
+ <span class="tag {{'v' if pr.status=='VERIFIED' else ('n' if pr.status=='NEEDS_REVIEW' else 'r')}}">{{pr.status}}</span></div>
+ <div class="small muted">Polymarket {{pr.poly.market_id}} · Kalshi {{pr.kal.market_id}}</div>
+ <ul class="checks">{% for c in pr.match.checks %}<li class="{{'ok' if c.verdict=='PASS' else ('warn' if c.verdict=='REVIEW' else 'bad')}}">{{c.verdict}} · {{c.name}}: {{c.detail}}</li>{% endfor %}</ul>
+ {% if pr.status!='VERIFIED' %}<div class="small" style="margin-top:6px">Not eligible for cross-platform arbitrage: unverified pairs are rejected. Two "up or down" contracts that settle on different sources or averaging can both lose.</div>{% endif %}</div>
+{% else %}<div class="muted">No Polymarket and Kalshi windows of the same length and start time are available to compare right now.</div>{% endfor %}
+</section>

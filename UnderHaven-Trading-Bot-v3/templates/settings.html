@@ -1,0 +1,21 @@
+{% extends 'layout.html' %}{% block main %}
+{% set groups=[('Data quality & scanning',['scan_interval','max_quote_age','max_spread','min_depth']),
+ ('Entry rules (edge, costs, time window)',['min_net_edge','safety_margin','slippage','min_remaining_5m','min_remaining_15m','min_elapsed_5m','min_elapsed_15m']),
+ ('Order size & exposure',['max_order_notional','max_capital_per_trade','max_exposure_platform','max_total_exposure','max_open_positions','max_unmatched']),
+ ('Loss limits (trip the kill switch)',['max_daily_loss','max_drawdown']),
+ ('Execution',['retry_count','orders_per_minute','max_exec_seconds']),
+ ('Strategy models',['mom_weight','mom_lookback','mr_lookback','mr_jump','mr_dev','imb_weight']),
+ ('Exits (single-leg trades only; hedged pairs hold to settlement)',['take_profit','stop_loss','max_hold','exit_before_expiry']),
+ ('Paper simulation assumptions',['depth_haircut','latency']),
+ ('LIVE per-account limits (independent for each platform)',['live_max_order_polymarket','live_max_order_kalshi','live_max_exposure_polymarket','live_max_exposure_kalshi','live_daily_loss_polymarket','live_daily_loss_kalshi'])] %}
+<form method="post" action="/settings"><input type="hidden" name="csrf" value="{{csrf}}">
+<section class="card"><div class="section-head"><h2 class="section-title">Settings &amp; risk limits</h2><button class="btn" type="submit">Save all</button></div>
+<div class="small muted" style="margin-bottom:10px">Every limit is enforced by the backend before any order, in paper and live mode. Values are validated on the server; defaults are conservative. If a limit cannot be evaluated the trade is rejected.</div>
+{% for title,keys in groups %}<div class="note" style="margin-bottom:10px"><b>{{title}}</b><div class="settings-grid" style="margin-top:8px">{% for k in keys %}<div><label title="{{R[k][2]}}">{{k|replace('_',' ')}}</label><input class="input" name="{{k}}" value="{{SV[k]}}" type="number" step="any" min="{{R[k][0]}}" max="{{R[k][1]}}"><div class="small muted">{{R[k][2]}}</div></div>{% endfor %}</div></div>{% endfor %}
+<div class="note"><b>Policies</b><div class="settings-grid" style="margin-top:8px">
+<div><label>Unmatched-leg recovery</label><select class="input" name="recovery">{% for c in C.recovery %}<option value="{{c}}" {{'selected' if SV.recovery==c}}>{{c}}</option>{% endfor %}</select><div class="small muted">complete_then_unwind: retry the missing leg, then sell back the excess</div></div>
+<div><label>Leg order</label><select class="input" name="leg_order">{% for c in C.leg_order %}<option value="{{c}}" {{'selected' if SV.leg_order==c}}>{{c}}</option>{% endfor %}</select><div class="small muted">which venue is bought first</div></div>
+<div><label>Kill-switch policy</label><select class="input" name="kill_policy">{% for c in C.kill_policy %}<option value="{{c}}" {{'selected' if SV.kill_policy==c}}>{{c}}</option>{% endfor %}</select><div class="small muted">hold_to_settlement: stop new entries, keep positions · unwind_open: also sell open single positions</div></div></div></div>
+<div class="small muted" style="margin-top:10px">Paper starting balances are set on the <a href="/paper">Paper trading</a> page and are locked once paper trading starts. Strategy on/off switches are on the <a href="/strategies">Strategies</a> page.</div>
+</section></form>
+{% endblock %}

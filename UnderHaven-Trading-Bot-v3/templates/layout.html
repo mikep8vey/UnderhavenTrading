@@ -1,0 +1,16 @@
+{% extends 'base.html' %}{% block body %}
+<div class="top"><img src="/static/logo.png" alt="UnderHaven"><div><div class="brand">UNDERHAVEN TRADING BOT</div><div class="muted small">BTC Up or Down · 5 &amp; 15-minute markets · Polymarket + Kalshi</div></div>
+  <div class="top-actions"><span class="pill {{'warnpill' if mode=='LIVE' else ''}}"><i class="dot {{'red' if mode=='LIVE' else 'green'}}"></i>{{mode}} MODE</span>{% if killed %}<span class="pill warnpill">KILL SWITCH</span>{% endif %}
+    <form method="post" action="/kill" onsubmit="return confirm('Emergency stop: no new entries and live mode off. Continue?')" style="margin:0"><button class="btn red smallbtn" type="submit">Emergency stop</button></form>
+    <a class="btn gray smallbtn" href="/logout" style="text-decoration:none">Logout</a></div></div>
+<nav class="nav">{% for key,label,href in [('overview','Overview','/'),('markets','Markets','/markets'),('strategies','Strategies','/strategies'),('paper','Paper trading','/paper'),('live','Live','/live'),('settings','Settings & risk','/settings')] %}<a class="{{'on' if nav==key}}" href="{{href}}">{{label}}</a>{% endfor %}</nav>
+{% if mode=='LIVE' %}<div class="note warnbox" style="margin-bottom:12px"><b>LIVE trading is enabled.</b> Strategies ticked under "Live permissions" can place real orders within the per-account limits. Paper trading continues separately.</div>{% endif %}
+{% if killed %}<div class="note warnbox" style="margin-bottom:12px"><b>Kill switch active:</b> {{kill_reason or 'no reason recorded'}}. No new entries are being made.
+  <form method="post" action="/kill/clear" style="display:inline"><button class="btn gray smallbtn" type="submit">Clear kill switch</button></form></div>{% endif %}
+{% block main %}{% endblock %}
+<script>
+(function(){var el=document.getElementById('live-content');if(!el||!el.dataset.refresh)return;
+setInterval(function(){if(document.visibilityState!=='visible'||document.querySelector('details[open]')||document.querySelector('input:focus,select:focus,textarea:focus'))return;
+fetch(location.pathname+'?fragment=1',{credentials:'same-origin',cache:'no-store'}).then(function(r){if(r.status===200)return r.text();if(r.status===302||r.status===401)location.href='/login';}).then(function(h){if(h)el.innerHTML=h}).catch(function(){})},3000)})();
+</script>
+{% endblock %}
