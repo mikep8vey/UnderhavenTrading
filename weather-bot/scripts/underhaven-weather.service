@@ -1,0 +1,14 @@
+[Unit]
+Description=Weather Trading Bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/usr/local/bin/weather-bot dry-run
+WorkingDirectory=/var/lib/weather-bot
+Restart=on-failure
+RestartSec=5
+EnvironmentFile=/etc/weather-bot/env
+
+[Install]
+WantedBy=multi-user.target

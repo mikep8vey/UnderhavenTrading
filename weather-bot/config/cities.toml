@@ -1,0 +1,79 @@
+# Per-city metadata (kept separate so stations.toml stays an exact copy of the registry).
+# tz        : IANA timezone of the station
+# unit      : unit the Polymarket brackets are quoted in
+# day_basis : "lst"   = NWS climatological day (local STANDARD time all year, i.e. 1am-1am during DST)
+#             "local" = civil local calendar day
+# station_names : extra spellings accepted when matching the market rules text
+# decoys    : other airports/stations; if the rules text mentions one, the market goes to MANUAL_REVIEW
+
+[[city]]
+name = "New York"
+aliases = ["new york city", "new york", "nyc"]
+tz = "America/New_York"
+unit = "F"
+day_basis = "lst"
+station_names = ["LaGuardia", "La Guardia"]
+decoys = ["JFK", "Kennedy", "Newark", "Central Park", "KNYC", "KJFK", "KEWR"]
+
+[[city]]
+name = "Chicago"
+aliases = ["chicago"]
+tz = "America/Chicago"
+unit = "F"
+day_basis = "lst"
+station_names = ["O'Hare", "OHare"]
+decoys = ["Midway", "KMDW"]
+
+[[city]]
+name = "Los Angeles"
+aliases = ["los angeles", "lax"]
+tz = "America/Los_Angeles"
+unit = "F"
+day_basis = "lst"
+station_names = ["Los Angeles International"]
+decoys = ["Burbank", "Long Beach", "Santa Monica", "KBUR", "KLGB", "KSMO"]
+
+[[city]]
+name = "Miami"
+aliases = ["miami"]
+tz = "America/New_York"
+unit = "F"
+day_basis = "lst"
+station_names = ["Miami International"]
+decoys = ["Fort Lauderdale", "Opa-locka", "Tamiami", "KFLL", "KOPF", "KTMB"]
+
+[[city]]
+name = "San Francisco"
+aliases = ["san francisco", "sf"]
+tz = "America/Los_Angeles"
+unit = "F"
+day_basis = "lst"
+station_names = ["San Francisco International"]
+decoys = ["Oakland", "San Jose", "KOAK", "KSJC"]
+
+[[city]]
+name = "Dallas"
+aliases = ["dallas"]
+tz = "America/Chicago"
+unit = "F"
+day_basis = "lst"
+station_names = ["Dallas Love"]
+decoys = ["DFW", "Fort Worth", "KDFW", "Addison", "KADS"]
+
+[[city]]
+name = "Paris"
+aliases = ["paris"]
+tz = "Europe/Paris"
+unit = "C"
+day_basis = "local"
+station_names = ["Paris-Le Bourget", "Paris Le Bourget"]
+decoys = ["Charles de Gaulle", "CDG", "LFPG", "Orly", "LFPO"]
+
+[[city]]
+name = "London"
+aliases = ["london"]
+tz = "Europe/London"
+unit = "C"
+day_basis = "local"
+station_names = ["London City Airport"]
+decoys = ["Heathrow", "EGLL", "Gatwick", "EGKK", "Stansted", "Luton"]
