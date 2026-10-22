@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="robots" content="noindex, nofollow">
+  <title>UNDERHAVEN · Bybit Trading Lab</title>
+  <link rel="stylesheet" href="/assets/uplot.min.css">
+  <link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body>
+  <div class="login-shell" id="loginShell" hidden>
+    <div class="login-card">
+      <div class="brand-block">
+        <div class="brand-mark">UH</div>
+        <div>
+          <h1>UNDERHAVEN</h1>
+          <p>BYBIT TRADING LAB · PAPER ONLY</p>
+        </div>
+      </div>
+      <p class="login-copy">
+        Private research terminal. Authenticate with the administrator account
+        created by <code>underhaven init-admin</code>.
+      </p>
+      <form id="loginForm" autocomplete="on">
+        <label for="loginUser">Username</label>
+        <input id="loginUser" name="username" autocomplete="username" required maxlength="64" spellcheck="false">
+        <label for="loginPass">Password</label>
+        <input id="loginPass" name="password" type="password" autocomplete="current-password" required maxlength="1024">
+        <button class="btn primary wide" type="submit" id="loginButton">Sign in</button>
+        <div class="form-error" id="loginError" role="alert"></div>
+      </form>
+      <div class="login-foot">
+        <span class="dot ok"></span> No live order path exists in this build.
+      </div>
+    </div>
+  </div>
+
+  <div id="app" hidden>
+    <header class="topbar">
+      <div class="brand-block compact">
+        <div class="brand-mark">UH</div>
+        <div>
+          <div class="brand-title">UNDERHAVEN</div>
+          <div class="brand-sub">BYBIT TRADING LAB</div>
+        </div>
+      </div>
+      <div class="status-strip" id="statusStrip">
+        <span class="chip paper" id="chipPaper">PAPER ONLY</span>
+        <span class="chip" id="chipTls" hidden><span class="dot"></span><span class="chip-text">TLS</span></span>
+        <span class="chip" id="chipFeed"><span class="dot"></span><span class="chip-text">feed</span></span>
+        <span class="chip" id="chipEngine"><span class="dot"></span><span class="chip-text">engine</span></span>
+        <span class="chip" id="chipWs"><span class="dot"></span><span class="chip-text">ws</span></span>
+        <span class="chip" id="chipClock" title="Local clock offset from Bybit server time">clock</span>
+        <span class="chip" id="chipUptime">uptime</span>
+      </div>
+      <div class="user-block">
+        <span class="user-name" id="userName">admin</span>
+        <button class="btn ghost small" id="logoutButton" type="button">Sign out</button>
+      </div>
+    </header>
+
+    <nav class="section-nav" aria-label="Sections">
+      <a href="#section-a"><b>A</b> Command deck</a>
+      <a href="#section-b"><b>B</b> Account</a>
+      <a href="#section-c"><b>C</b> Strategies</a>
+      <a href="#section-d"><b>D</b> Scanner</a>
+      <a href="#section-e"><b>E</b> Book &amp; fills</a>
+      <a href="#section-f"><b>F</b> Edge lab</a>
+      <a href="#section-g"><b>G</b> Risk &amp; system</a>
+    </nav>
+
+    <main>
+      <div class="alert-strip" id="alertStrip" hidden></div>
+
+      <section class="section" id="section-a">
+        <div class="section-head">
+          <div class="section-letter">A</div>
+          <div>
+            <h2>Command deck</h2>
+            <p>Live state of the paper engine, market feed and aggregate portfolio.</p>
+          </div>
+          <div class="section-meta" id="deckTimestamp">awaiting snapshot</div>
+        </div>
+        <div class="metric-grid">
+          <article class="metric">
+            <span class="metric-label">Total equity</span>
+            <strong id="mEquity">—</strong>
+            <span class="metric-sub" id="mEquitySub">across three wallets</span>
+          </article>
+          <article class="metric">
+            <span class="metric-label">Daily P&amp;L</span>
+            <strong id="mDaily">—</strong>
+            <span class="metric-sub" id="mDailySub">vs day-start equity</span>
+          </article>
+          <article class="metric">
+            <span class="metric-label">Drawdown</span>
+            <strong id="mDrawdown">—</strong>
+            <span class="metric-sub" id="mDrawdownSub">peak to current</span>
+          </article>
+          <article class="metric">
+            <span class="metric-label">Exposure</span>
+            <strong id="mExposure">—</strong>
+            <span class="metric-sub" id="mOpen">0 open positions</span>
+          </article>
+          <article class="metric">
+            <span class="metric-label">Costs</span>
+            <strong id="mCosts">—</strong>
+            <span class="metric-sub" id="mCostsSub">fees + funding</span>
+          </article>
+          <article class="metric">
+            <span class="metric-label">Feed age</span>
+            <strong id="mFeedAge">—</strong>
+            <span class="metric-sub" id="mFeedDetail">waiting for data</span>
+          </article>
+        </div>
+        <div class="grid two-one">
+          <div class="panel">
+            <div class="panel-head">
+              <h3>Aggregate equity</h3>
+              <span class="muted" id="equityCaption">paper ledger</span>
+            </div>
+            <div class="chart chart-tall" id="equityChart"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>Engine gates</h3></div>
+            <div class="kv" id="gateList"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="section-b">
+        <div class="section-head">
+          <div class="section-letter">B</div>
+          <div>
+            <h2>Account &amp; costs</h2>
+            <p>Each strategy trades an isolated $100.00 paper wallet with its own ledger.</p>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Wallet ledger</h3>
+            <span class="muted">cash + unrealized = equity</span>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Strategy</th><th>Initial</th><th>Cash</th><th>Equity</th>
+                  <th>Realized</th><th>Unrealized</th><th>Fees</th><th>Funding</th>
+                  <th>Day P&amp;L</th><th>Trades</th>
+                </tr>
+              </thead>
+              <tbody id="walletBody"><tr><td colspan="10" class="empty">No snapshot yet.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="section-c">
+        <div class="section-head">
+          <div class="section-letter">C</div>
+          <div>
+            <h2>Strategy desk</h2>
+            <p>Independent evaluators, ledgers and validation status. Nothing is pooled.</p>
+          </div>
+        </div>
+        <div class="strategy-grid" id="strategyGrid">
+          <div class="empty-panel">Waiting for the first dashboard snapshot.</div>
+        </div>
+      </section>
+
+      <section class="section" id="section-d">
+        <div class="section-head">
+          <div class="section-letter">D</div>
+          <div>
+            <h2>Universe scanner</h2>
+            <p>USDT linear perpetuals ranked by liquidity, spread, depth and volatility. Stale or crossed quotes are rejected.</p>
+          </div>
+          <div class="section-meta"><input id="scanFilter" class="input small" placeholder="Filter symbol" spellcheck="false"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Eligible market map</h3>
+            <span class="muted" id="scanSummary">—</span>
+          </div>
+          <div class="table-wrap tall">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Symbol</th><th>Last</th><th>Spread</th><th>Bid depth</th>
+                  <th>Ask depth</th><th>24h turnover</th><th>Volatility</th>
+                  <th>Score</th><th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="scanBody"><tr><td colspan="9" class="empty">No scan results yet.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="section-e">
+        <div class="section-head">
+          <div class="section-letter">E</div>
+          <div>
+            <h2>Book &amp; fills</h2>
+            <p>Open paper positions and the most recent closed trades. Fills are conservative and cost-aware.</p>
+          </div>
+          <div class="section-meta"><a class="btn ghost small" href="/api/trades.csv" download>Export trades CSV</a></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>Open positions</h3><span class="muted" id="positionSummary">—</span></div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Strategy</th><th>Symbol</th><th>Side</th><th>Qty</th>
+                  <th>Entry</th><th>Mark</th><th>Stop</th><th>Target</th>
+                  <th>Unrealized</th><th>Notional</th><th>Age</th><th></th>
+                </tr>
+              </thead>
+              <tbody id="positionBody"><tr><td colspan="12" class="empty">No open positions.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>Recent closed trades</h3><span class="muted">newest first · maximum 40 rows</span></div>
+          <div class="table-wrap tall">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Exit time</th><th>Strategy</th><th>Symbol</th><th>Side</th>
+                  <th>Entry</th><th>Exit</th><th>Net P&amp;L</th><th>Fees</th>
+                  <th>Funding</th><th>Reason</th><th>Bars</th>
+                </tr>
+              </thead>
+              <tbody id="tradeBody"><tr><td colspan="11" class="empty">No closed trades yet.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="section-f">
+        <div class="section-head">
+          <div class="section-letter">F</div>
+          <div>
+            <h2>Edge lab</h2>
+            <p>Cost-aware historical simulation with train / validation / out-of-sample splits, walk-forward and sensitivity.</p>
+          </div>
+        </div>
+        <div class="grid one-two">
+          <div class="panel">
+            <div class="panel-head"><h3>Run a backtest</h3></div>
+            <form id="backtestForm" class="stack">
+              <label for="btStrategy">Strategy</label>
+              <select id="btStrategy" class="input">
+                <option value="trend">Trend Following</option>
+                <option value="mean_reversion">Mean Reversion</option>
+                <option value="breakout">Breakout / Momentum</option>
+              </select>
+              <label for="btSymbol">Symbol</label>
+              <input id="btSymbol" class="input" value="BTCUSDT" spellcheck="false" required>
+              <div class="split">
+                <div>
+                  <label for="btInterval">Interval</label>
+                  <select id="btInterval" class="input">
+                    <option value="5m" selected>5m</option>
+                    <option value="1m">1m</option>
+                    <option value="15m">15m</option>
+                    <option value="1h">1h</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="btCandles">Candles</label>
+                  <input id="btCandles" class="input" type="number" min="300" max="20000" step="100" value="3000">
+                </div>
+              </div>
+              <button class="btn primary" type="submit" id="btRun">Run backtest</button>
+              <div class="hint">
+                Historical data is read from SQLite. Import more history if the
+                database has fewer than 300 candles for the pair.
+              </div>
+            </form>
+            <div class="divider"></div>
+            <div class="panel-head"><h3>Import history</h3></div>
+            <form id="historyForm" class="stack compact">
+              <div class="split">
+                <div>
+                  <label for="histSymbol">Symbol</label>
+                  <input id="histSymbol" class="input" value="BTCUSDT" spellcheck="false" required>
+                </div>
+                <div>
+                  <label for="histDays">Days</label>
+                  <input id="histDays" class="input" type="number" min="1" max="365" value="90">
+                </div>
+              </div>
+              <label for="histInterval">Interval</label>
+              <select id="histInterval" class="input">
+                <option value="5m" selected>5m</option>
+                <option value="1m">1m</option>
+                <option value="15m">15m</option>
+                <option value="1h">1h</option>
+              </select>
+              <button class="btn ghost" type="submit" id="histRun">Import from Bybit</button>
+            </form>
+          </div>
+          <div class="panel">
+            <div class="panel-head">
+              <h3>Report</h3>
+              <span class="muted" id="btStatus">NOT YET RUN</span>
+            </div>
+            <div id="btEmpty" class="empty-panel">Choose a strategy, symbol and interval, then run a backtest.</div>
+            <div id="btReport" hidden>
+              <div class="metric-grid tight" id="btMetrics"></div>
+              <div class="chart chart-mid" id="btChart"></div>
+              <div id="btWarnings" class="warning-list"></div>
+              <h4>Segments</h4>
+              <div class="table-wrap">
+                <table class="data-table compact">
+                  <thead><tr><th>Segment</th><th>Trades</th><th>Net</th><th>Win rate</th><th>PF</th><th>Max DD</th><th>Status</th></tr></thead>
+                  <tbody id="btSegments"></tbody>
+                </table>
+              </div>
+              <h4>Walk-forward</h4>
+              <div class="table-wrap">
+                <table class="data-table compact">
+                  <thead><tr><th>Fold</th><th>Test window</th><th>Trades</th><th>Test net</th><th>Max DD</th><th>Note</th></tr></thead>
+                  <tbody id="btWalk"></tbody>
+                </table>
+              </div>
+              <h4>Sensitivity</h4>
+              <div class="table-wrap">
+                <table class="data-table compact">
+                  <thead><tr><th>Case</th><th>Trades</th><th>Net</th><th>Expectancy</th><th>Max DD</th><th>PF</th><th>Passed</th></tr></thead>
+                  <tbody id="btSensitivity"></tbody>
+                </table>
+              </div>
+              <div class="report-actions">
+                <a class="btn ghost small" id="btCsv" href="#" download>Download trades CSV</a>
+                <a class="btn ghost small" id="btJson" href="#" download>Open stored JSON</a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>Stored runs</h3><span class="muted" id="storedSummary">—</span></div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Created</th><th>Strategy</th><th>Symbol</th><th>Trades</th><th>Net</th><th>Max DD</th><th>OOS</th><th>Run</th></tr></thead>
+              <tbody id="storedBody"><tr><td colspan="8" class="empty">No stored backtests.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="section-g">
+        <div class="section-head">
+          <div class="section-letter">G</div>
+          <div>
+            <h2>Risk, system &amp; security</h2>
+            <p>Hard gates, lockouts, operational controls, audit trail and credential handling.</p>
+          </div>
+        </div>
+        <div class="grid two-one">
+          <div class="panel">
+            <div class="panel-head"><h3>Risk gates</h3><span class="muted" id="riskState">—</span></div>
+            <div class="kv" id="riskList"></div>
+            <div class="divider"></div>
+            <div class="panel-head"><h3>Controls</h3></div>
+            <label for="controlReason">Reason (recorded in audit log)</label>
+            <input id="controlReason" class="input" placeholder="operator note" maxlength="240">
+            <div class="button-row">
+              <button class="btn ghost" data-action="pause" type="button">Pause entries</button>
+              <button class="btn ghost" data-action="resume" type="button">Resume entries</button>
+              <button class="btn danger" data-action="emergency_stop" type="button">Emergency stop</button>
+              <button class="btn ghost" data-action="clear_emergency" type="button">Clear emergency</button>
+              <button class="btn ghost" data-action="reset_lockouts" type="button">Reset lockouts</button>
+            </div>
+            <div class="hint">
+              Pausing blocks new entries but keeps marking and exits active.
+              Emergency stop flattens every open paper position and blocks new entries.
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>System</h3></div>
+            <div class="kv" id="systemList"></div>
+          </div>
+        </div>
+        <div class="grid two">
+          <div class="panel">
+            <div class="panel-head"><h3>Security</h3></div>
+            <div class="kv" id="securityList"></div>
+            <div class="divider"></div>
+            <h4>Change password</h4>
+            <form id="passwordForm" class="stack compact">
+              <label for="pwCurrent">Current password</label>
+              <input id="pwCurrent" class="input" type="password" autocomplete="current-password" required>
+              <label for="pwNext">New password</label>
+              <input id="pwNext" class="input" type="password" autocomplete="new-password" required minlength="12">
+              <button class="btn ghost" type="submit">Change password &amp; revoke sessions</button>
+            </form>
+            <div class="divider"></div>
+            <h4>Optional read-only Bybit key</h4>
+            <p class="hint">
+              The key is verified with a signed <code>/v5/user/query-api</code>
+              call, rejected unless Bybit reports <code>readOnly=1</code>, then
+              encrypted with AES-256-GCM using a master key outside SQLite.
+              It is never returned to the browser and is not needed for public
+              market data.
+            </p>
+            <form id="credentialForm" class="stack compact">
+              <label for="credName">Label</label>
+              <input id="credName" class="input" value="primary" maxlength="64">
+              <label for="credKey">API key</label>
+              <input id="credKey" class="input" autocomplete="off" spellcheck="false" required>
+              <label for="credSecret">API secret</label>
+              <input id="credSecret" class="input" type="password" autocomplete="off" required>
+              <label for="credNote">Note (optional)</label>
+              <input id="credNote" class="input" maxlength="200">
+              <button class="btn ghost" type="submit">Verify &amp; store read-only key</button>
+              <button class="btn danger small" type="button" id="credDelete">Delete stored key</button>
+            </form>
+            <div class="kv" id="credentialState"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>Audit trail</h3><span class="muted">append-only · latest 20</span></div>
+            <div class="audit-list" id="auditList"></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>Runtime configuration</h3><span class="muted">read-only view</span></div>
+          <pre class="code-block" id="configView">loading…</pre>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>UNDERHAVEN BYBIT TRADING LAB</span>
+      <span id="footerVersion">paper-only build</span>
+      <span class="muted">No live order path. No trading credentials are required.</span>
+    </footer>
+  </div>
+
+  <div class="toast" id="toast" role="status" hidden></div>
+
+  <script src="/assets/uplot.iife.min.js"></script>
+  <script src="/assets/app.js"></script>
+</body>
+</html>
