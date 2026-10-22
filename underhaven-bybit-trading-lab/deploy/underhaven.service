@@ -1,0 +1,43 @@
+[Unit]
+Description=UNDERHAVEN BYBIT TRADING LAB (paper only)
+Documentation=https://github.com/underhaven/underhaven
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=underhaven
+Group=underhaven
+WorkingDirectory=/opt/underhaven
+EnvironmentFile=/etc/underhaven/underhaven.env
+ExecStart=/opt/underhaven/bin/underhaven serve
+Restart=always
+RestartSec=5
+TimeoutStopSec=25
+KillSignal=SIGINT
+UMask=0077
+
+# Hardening. /var/lib/underhaven holds SQLite; /etc/underhaven holds the
+# master key and is deliberately not writable by the service user.
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/underhaven
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+RestrictRealtime=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+SystemCallArchitectures=native
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
